@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Damage Report — {{ filename }}</title>
+    <style>
+        /* ── Reset & Base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f0f4f8;
+            color: #1a202c;
+            min-height: 100vh;
+            padding: 32px 16px;
+        }
+
+        /* ── Page Wrapper ── */
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+        }
+
+        /* ── Header ── */
+        .report-header {
+            background: linear-gradient(135deg, #0c2d6b 0%, #1a56c4 100%);
+            padding: 36px 40px 30px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-header::after {
+            content: '';
+            position: absolute;
+            right: -60px; top: -60px;
+            width: 260px; height: 260px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .report-header::before {
+            content: '';
+            position: absolute;
+            right: 60px; bottom: -80px;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+        }
+
+        .header-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: rgba(255,255,255,0.9);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 99px;
+            margin-bottom: 14px;
+        }
+
+        .report-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 22px;
+        }
+
+        .header-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .meta-icon {
+            font-size: 14px;
+        }
+
+        /* ── Status Banner ── */
+        .status-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 40px;
+            font-size: 13px;
+            font-weight: 600;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-banner.poor   { background: #fff1f0; color: #c0392b; border-bottom: 2px solid #ffd7d5; }
+        .status-banner.fair   { background: #fffbf0; color: #d68910; border-bottom: 2px solid #fdebd0; }
+        .status-banner.good   { background: #f0fdf4; color: #1e8449; border-bottom: 2px solid #d5f5e3; }
+
+        .status-left { display: flex; align-items: center; gap: 8px; }
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .poor .status-dot   { background: #e74c3c; }
+        .fair .status-dot   { background: #f39c12; }
+        .good .status-dot   { background: #27ae60; }
+
+        .status-action {
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.75;
+        }
+
+        /* ── Body ── */
+        .report-body { padding: 32px 40px; }
+
+        /* ── Section Label ── */
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 14px;
+        }
+
+        /* ── Metric Cards ── */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 14px;
+            text-align: center;
+        }
+
+        .metric-card .num {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .metric-card .lbl {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .num-red    { color: #e74c3c; }
+        .num-amber  { color: #d68910; }
+        .num-blue   { color: #1a56c4; }
+        .num-green  { color: #1e8449; }
+
+        /* ── Divider ── */
+        .divider {
+            border: none;
+            border-top: 1px solid #f1f5f9;
+            margin: 28px 0;
+        }
+
+        /* ── Detection Image ── */
+        .image-wrapper {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            display: block;
+            max-height: 400px;
+            object-fit: contain;
+            background: #0f172a;
+        }
+
+        .image-legend {
+            display: flex;
+            gap: 20px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .legend-swatch {
+            width: 28px;
+            height: 8px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* ── Two-column layout ── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        /* ── Severity Bars ── */
+        .severity-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .severity-bars { display: flex; flex-direction: column; gap: 16px; }
+
+        .sev-row { display: flex; flex-direction: column; gap: 6px; }
+
+        .sev-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sev-name {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .sev-count {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .sev-track {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .sev-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 1s ease;
+        }
+
+        /* ── Health Score ── */
+        .health-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 12px;
+        }
+
+        .health-ring-wrap { position: relative; width: 110px; height: 110px; }
+
+        .health-ring-wrap svg { transform: rotate(-90deg); }
+
+        .health-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .health-label {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .health-desc {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        /* ── Data Table ── */
+        .data-table-wrap {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table thead th {
+            background: #1a56c4;
+            color: white;
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.03em;
+        }
+
+        .data-table tbody tr:nth-child(even) { background: #f8fafc; }
+        .data-table tbody tr:hover { background: #eff6ff; }
+
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+
+        .data-table tbody tr:last-child td { border-bottom: none; }
+
+        /* ── Status Badges ── */
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 99px;
+        }
+
+        .badge-red    { background: #fff1f0; color: #c0392b; }
+        .badge-amber  { background: #fffbf0; color: #d68910; }
+        .badge-green  { background: #f0fdf4; color: #1e8449; }
+        .badge-blue   { background: #eff6ff; color: #1a56c4; }
+
+        /* ── Recommendation Box ── */
+        .recommendation {
+            border-left: 4px solid #1a56c4;
+            background: #eff6ff;
+            border-radius: 0 10px 10px 0;
+            padding: 16px 20px;
+            margin-bottom: 32px;
+        }
+
+        .recommendation h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1a56c4;
+            margin-bottom: 6px;
+        }
+
+        .recommendation p {
+            font-size: 13px;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        /* ── Footer ── */
+        .report-footer {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .footer-left {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .footer-right {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* ── Print Button ── */
+        .print-bar {
+            max-width: 860px;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-print {
+            background: #1a56c4;
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .btn-print:hover { background: #1541a0; }
+
+        .btn-back {
+            background: white;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .btn-back:hover { background: #f1f5f9; }
+
+        /* ── Print Styles ── */
+        @media print {
+            body { background: white; padding: 0; }
+            .print-bar { display: none; }
+            .page { box-shadow: none; border-radius: 0; }
+            .report-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .status-banner { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .data-table thead { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        @media (max-width: 600px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .two-col { grid-template-columns: 1fr; }
+            .report-header, .report-body, .report-footer { padding-left: 20px; padding-right: 20px; }
+            .status-banner { padding-left: 20px; padding-right: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Action Bar -->
+<div class="print-bar">
+    <a class="btn-back" href="/">← Back</a>
+    <button class="btn-print" onclick="window.print()">🖨 Print / Save PDF</button>
+</div>
+
+<div class="page">
+
+    <!-- ── Header ── -->
+    <div class="report-header">
+        <div class="header-badge">Report ID: {{ report_id }}</div>
+        <h1>Smart Road Damage Detection Report</h1>
+        <div class="header-subtitle">YOLOv8 · OpenCV · Flask</div>
+        <div class="header-meta">
+            <div class="meta-item">
+                <span class="meta-icon">📅</span>
+                <span>{{ date }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-icon">📁</span>
+                <span>{{ filename }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-icon">🎯</span>
+                <span>Confidence: {{ confidence }}%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Status Banner ── -->
+    {% if road_health_score >= 80 %}
+    <div class="status-banner good">
+        <div class="status-left">
+            <div class="status-dot"></div>
+            Road condition is Excellent — no immediate action required
+        </div>
+        <span class="status-action">Schedule routine inspection</span>
+    </div>
+    {% elif road_health_score >= 50 %}
+    <div class="status-banner fair">
+        <div class="status-left">
+            <div class="status-dot"></div>
+            Road condition is Fair — maintenance recommended soon
+        </div>
+        <span class="status-action">Plan repair within 30 days</span>
+    </div>
+    {% else %}
+    <div class="status-banner poor">
+        <div class="status-left">
+            <div class="status-dot"></div>
+            Road condition is Poor — immediate maintenance required
+        </div>
+        <span class="status-action">Urgent: repair within 7 days</span>
+    </div>
+    {% endif %}
+
+    <!-- ── Body ── -->
+    <div class="report-body">
+
+        <!-- Summary Metrics -->
+        <div class="section-label">Summary metrics</div>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="num {% if pothole_count > 5 %}num-red{% elif pothole_count > 0 %}num-amber{% else %}num-green{% endif %}">
+                    {{ pothole_count }}
+                </div>
+                <div class="lbl">Total potholes</div>
+            </div>
+            <div class="metric-card">
+                <div class="num num-blue">{{ confidence }}%</div>
+                <div class="lbl">Avg confidence</div>
+            </div>
+            <div class="metric-card">
+                <div class="num {% if road_health_score >= 80 %}num-green{% elif road_health_score >= 50 %}num-amber{% else %}num-red{% endif %}">
+                    {{ road_health_score }}%
+                </div>
+                <div class="lbl">Road health</div>
+            </div>
+            <div class="metric-card">
+                <div class="num num-amber">{{ severe_count }}</div>
+                <div class="lbl">Severe potholes</div>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Detection Image -->
+        <div class="section-label">Detection result</div>
+        <div class="image-wrapper">
+            <img src="/static/results/{{ filename }}" alt="Detection result for {{ filename }}">
+            <div class="image-legend">
+                <div class="legend-item">
+                    <div class="legend-swatch" style="background:#e74c3c;"></div>
+                    Severe (confidence ≥ 0.85)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-swatch" style="background:#f39c12;"></div>
+                    Medium (0.75 – 0.85)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-swatch" style="background:#1abc9c;"></div>
+                    Minor (0.70 – 0.75)
+                </div>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Severity + Health (two columns) -->
+        <div class="two-col">
+
+            <!-- Severity Bars -->
+            <div>
+                <div class="section-label">Severity breakdown</div>
+                <div class="severity-card">
+                    <div class="severity-bars">
+
+                        {% set total = pothole_count if pothole_count > 0 else 1 %}
+
+                        <div class="sev-row">
+                            <div class="sev-header">
+                                <span class="sev-name" style="color:#c0392b;">🔴 Severe</span>
+                                <span class="sev-count">{{ severe_count }} pothole{{ 's' if severe_count != 1 }}</span>
+                            </div>
+                            <div class="sev-track">
+                                <div class="sev-fill" style="width:{{ (severe_count / total * 100) | round | int }}%; background:#e74c3c;"></div>
+                            </div>
+                        </div>
+
+                        <div class="sev-row">
+                            <div class="sev-header">
+                                <span class="sev-name" style="color:#d68910;">🟠 Medium</span>
+                                <span class="sev-count">{{ medium_count }} pothole{{ 's' if medium_count != 1 }}</span>
+                            </div>
+                            <div class="sev-track">
+                                <div class="sev-fill" style="width:{{ (medium_count / total * 100) | round | int }}%; background:#f39c12;"></div>
+                            </div>
+                        </div>
+
+                        <div class="sev-row">
+                            <div class="sev-header">
+                                <span class="sev-name" style="color:#1e8449;">🟡 Minor</span>
+                                <span class="sev-count">{{ minor_count }} pothole{{ 's' if minor_count != 1 }}</span>
+                            </div>
+                            <div class="sev-track">
+                                <div class="sev-fill" style="width:{{ (minor_count / total * 100) | round | int }}%; background:#1abc9c;"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Road Health Ring -->
+            <div>
+                <div class="section-label">Road health score</div>
+                <div class="health-card">
+                    <div class="health-ring-wrap">
+                        {% set circumference = 283 %}
+                        {% set filled = (road_health_score / 100 * circumference) | round | int %}
+                        <svg width="110" height="110" viewBox="0 0 110 110">
+                            <circle cx="55" cy="55" r="45" fill="none"
+                                stroke="#e2e8f0" stroke-width="10"/>
+                            <circle cx="55" cy="55" r="45" fill="none"
+                                stroke="{% if road_health_score >= 80 %}#27ae60{% elif road_health_score >= 50 %}#f39c12{% else %}#e74c3c{% endif %}"
+                                stroke-width="10"
+                                stroke-dasharray="{{ filled }} {{ circumference }}"
+                                stroke-linecap="round"/>
+                        </svg>
+                        <div class="health-center"
+                            style="color:{% if road_health_score >= 80 %}#1e8449{% elif road_health_score >= 50 %}#d68910{% else %}#c0392b{% endif %}">
+                            {{ road_health_score }}%
+                        </div>
+                    </div>
+                    <div class="health-label"
+                        style="color:{% if road_health_score >= 80 %}#1e8449{% elif road_health_score >= 50 %}#d68910{% else %}#c0392b{% endif %}">
+                        {% if road_health_score >= 80 %}Excellent{% elif road_health_score >= 50 %}Fair{% else %}Poor{% endif %}
+                    </div>
+                    <div class="health-desc">
+                        Based on {{ pothole_count }} pothole{{ 's' if pothole_count != 1 }} detected —
+                        {{ severe_count }} severe, {{ medium_count }} medium, {{ minor_count }} minor
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <hr class="divider">
+
+        <!-- Detection Log Table -->
+        <div class="section-label">Full detection log</div>
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Total potholes detected</td>
+                        <td><strong>{{ pothole_count }}</strong></td>
+                        <td>
+                            {% if pothole_count == 0 %}
+                                <span class="badge badge-green">Clear</span>
+                            {% elif pothole_count <= 3 %}
+                                <span class="badge badge-amber">Moderate</span>
+                            {% else %}
+                                <span class="badge badge-red">Critical</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Severe potholes (conf ≥ 0.85)</td>
+                        <td><strong>{{ severe_count }}</strong></td>
+                        <td>
+                            {% if severe_count == 0 %}
+                                <span class="badge badge-green">None</span>
+                            {% else %}
+                                <span class="badge badge-red">High risk</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Medium potholes (0.75 – 0.85)</td>
+                        <td><strong>{{ medium_count }}</strong></td>
+                        <td>
+                            {% if medium_count == 0 %}
+                                <span class="badge badge-green">None</span>
+                            {% elif medium_count <= 3 %}
+                                <span class="badge badge-amber">Moderate</span>
+                            {% else %}
+                                <span class="badge badge-red">High</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Minor potholes (0.70 – 0.75)</td>
+                        <td><strong>{{ minor_count }}</strong></td>
+                        <td>
+                            {% if minor_count == 0 %}
+                                <span class="badge badge-green">None</span>
+                            {% else %}
+                                <span class="badge badge-amber">Low risk</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Average detection confidence</td>
+                        <td><strong>{{ confidence }}%</strong></td>
+                        <td>
+                            {% if confidence >= 85 %}
+                                <span class="badge badge-green">Excellent</span>
+                            {% elif confidence >= 75 %}
+                                <span class="badge badge-blue">Good</span>
+                            {% else %}
+                                <span class="badge badge-amber">Fair</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Road health score</td>
+                        <td><strong>{{ road_health_score }}%</strong></td>
+                        <td>
+                            {% if road_health_score >= 80 %}
+                                <span class="badge badge-green">Excellent</span>
+                            {% elif road_health_score >= 50 %}
+                                <span class="badge badge-amber">Fair</span>
+                            {% else %}
+                                <span class="badge badge-red">Poor</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="recommendation">
+            <h4>📋 Recommendation</h4>
+            {% if road_health_score >= 80 %}
+            <p>This road segment is in excellent condition. Schedule a routine inspection in 6 months. No immediate action required.</p>
+            {% elif road_health_score >= 50 %}
+            <p>This road segment shows moderate damage with {{ pothole_count }} pothole{{ 's' if pothole_count != 1 }} detected. Plan maintenance within 30 days to prevent further deterioration. Focus on the {{ medium_count }} medium-severity pothole{{ 's' if medium_count != 1 }} first.</p>
+            {% else %}
+            <p>This road segment is in poor condition with {{ pothole_count }} potholes detected, including {{ severe_count }} severe case{{ 's' if severe_count != 1 }}. Immediate repair is required within 7 days. This road poses a significant risk to vehicles and road users.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ── Footer ── -->
+    <div class="report-footer">
+        <div class="footer-left">
+            <strong>Smart Road Damage Detection System</strong><br>
+            Generated on {{ date }}
+        </div>
+        <div class="footer-right">
+            YOLOv8 · OpenCV · Flask &nbsp;|&nbsp; Report {{ report_id }}
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

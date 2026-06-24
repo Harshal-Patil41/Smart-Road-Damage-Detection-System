@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Road Damage Detection — Project Analysis Report</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
+
+        :root {
+            --bg: #05080f;
+            --surface: #0c1220;
+            --border: #1a2640;
+            --accent: #3b82f6;
+            --accent2: #22d3ee;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --ok: #22c55e;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --mono: 'IBM Plex Mono', monospace;
+            --sans: 'IBM Plex Sans', sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* HERO */
+        .hero {
+            background: linear-gradient(135deg, #05080f 0%, #0a1628 50%, #051020 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 56px 48px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 80% at 80% 20%, rgba(59, 130, 246, .08), transparent);
+            pointer-events: none;
+        }
+
+        .hero-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: .15em;
+            color: var(--accent2);
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        .hero h1 {
+            font-size: clamp(28px, 4vw, 48px);
+            font-weight: 700;
+            letter-spacing: -.02em;
+            line-height: 1.15;
+            max-width: 720px;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .hero p {
+            color: var(--muted);
+            font-weight: 300;
+            max-width: 600px;
+            margin-bottom: 32px;
+        }
+
+        .pill-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 99px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: rgba(255, 255, 255, .03);
+        }
+
+        .pill.blue {
+            border-color: rgba(59, 130, 246, .4);
+            color: var(--accent);
+        }
+
+        .pill.cyan {
+            border-color: rgba(34, 211, 238, .4);
+            color: var(--accent2);
+        }
+
+        .pill.green {
+            border-color: rgba(34, 197, 94, .4);
+            color: var(--ok);
+        }
+
+        /* LAYOUT */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 48px 32px;
+        }
+
+        .section {
+            margin-bottom: 56px;
+        }
+
+        .section-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: .18em;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* KPI GRID */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .kpi-card.warn::after {
+            background: var(--warn);
+        }
+
+        .kpi-card.ok::after {
+            background: var(--ok);
+        }
+
+        .kpi-card.danger::after {
+            background: var(--danger);
+        }
+
+        .kpi-card.cyan::after {
+            background: var(--accent2);
+        }
+
+        .kpi-val {
+            font-family: var(--mono);
+            font-size: 32px;
+            font-weight: 600;
+            color: white;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .kpi-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* CHART CONTAINERS */
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .chart-box h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .chart-box.wide {
+            grid-column: 1 / -1;
+        }
+
+        canvas {
+            width: 100% !important;
+        }
+
+        /* BAR CHART — custom CSS */
+        .bar-group {
+            margin-bottom: 14px;
+        }
+
+        .bar-label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .bar-track {
+            background: rgba(255, 255, 255, .05);
+            border-radius: 4px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width .8s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* TABLE */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            font-family: var(--mono);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .badge-ok {
+            background: rgba(34, 197, 94, .15);
+            color: var(--ok);
+        }
+
+        .badge-warn {
+            background: rgba(245, 158, 11, .15);
+            color: var(--warn);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, .15);
+            color: var(--danger);
+        }
+
+        .badge-info {
+            background: rgba(59, 130, 246, .15);
+            color: var(--accent);
+        }
+
+        /* ARCH DIAGRAM */
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 24px 0;
+        }
+
+        .arch-node {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 18px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .arch-node .icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .arch-node .name {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .arch-node .sub {
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .arch-arrow {
+            font-size: 20px;
+            color: var(--border);
+            padding: 0 10px;
+        }
+
+        .arch-node.highlight {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, .08);
+        }
+
+        /* ISSUES LIST */
+        .issue-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .issue-item {
+            display: flex;
+            gap: 14px;
+            padding: 14px 18px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            align-items: flex-start;
+        }
+
+        .issue-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .issue-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .issue-desc {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .issue-item.crit {
+            border-left: 3px solid var(--danger);
+        }
+
+        .issue-item.warn {
+            border-left: 3px solid var(--warn);
+        }
+
+        .issue-item.info {
+            border-left: 3px solid var(--accent);
+        }
+
+        /* RECOMMENDATION CARDS */
+        .rec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .rec-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .rec-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .rec-card p {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        /* FOOTER */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 24px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer p {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .footer strong {
+            color: var(--text);
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HERO -->
+    <header class="hero">
+        <div class="hero-label">Project Analysis Report · June 2026</div>
+        <h1>Smart Road Damage<br><span>Detection System</span></h1>
+        <p>A comprehensive technical and performance audit of the YOLOv8-powered pothole detection web application —
+            covering architecture, model performance, usage patterns, code quality, and improvement roadmap.</p>
+        <div class="pill-row">
+            <span class="pill blue">YOLOv8n</span>
+            <span class="pill cyan">Flask · OpenCV</span>
+            <span class="pill green">94.07% Accuracy</span>
+            <span class="pill">178 Predictions Logged</span>
+            <span class="pill">Python 3.x</span>
+        </div>
+    </header>
+
+    <main class="main">
+
+        <!-- KPI OVERVIEW -->
+        <section class="section">
+            <div class="section-label">Overview</div>
+            <div class="section-title">Key Metrics at a Glance</div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card ok">
+                    <div class="kpi-val">94.07%</div>
+                    <div class="kpi-label">Model Accuracy (YOLOv8)</div>
+                    <div class="kpi-sub">Trained on custom pothole dataset</div>
+                </div>
+                <div class="kpi-card cyan">
+                    <div class="kpi-val">178</div>
+                    <div class="kpi-label">Total Predictions Logged</div>
+                    <div class="kpi-sub">Across 47 unique images</div>
+                </div>
+                <div class="kpi-card blue">
+                    <div class="kpi-val">84.1%</div>
+                    <div class="kpi-label">Avg Detection Confidence</div>
+                    <div class="kpi-sub">Median: 85.3%</div>
+                </div>
+                <div class="kpi-card ok">
+                    <div class="kpi-val">93.8%</div>
+                    <div class="kpi-label">Pothole Detection Rate</div>
+                    <div class="kpi-sub">167 of 178 predictions positive</div>
+                </div>
+                <div class="kpi-card warn">
+                    <div class="kpi-val">6.2%</div>
+                    <div class="kpi-label">Normal Road (Negative)</div>
+                    <div class="kpi-sub">11 of 178 predictions</div>
+                </div>
+                <div class="kpi-card blue">
+                    <div class="kpi-val">0.70</div>
+                    <div class="kpi-label">Confidence Threshold (conf)</div>
+                    <div class="kpi-sub">IOU threshold: 0.35</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SYSTEM ARCHITECTURE -->
+        <section class="section">
+            <div class="section-label">Architecture</div>
+            <div class="section-title">System Design & Data Flow</div>
+
+            <div class="chart-box">
+                <div class="arch-flow">
+                    <div class="arch-node">
+                        <div class="icon">🖼️</div>
+                        <div class="name">User Upload</div>
+                        <div class="sub">Browser / Camera</div>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-node">
+                        <div class="icon">🐍</div>
+                        <div class="name">Flask App</div>
+                        <div class="sub">app.py · Route /</div>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-node highlight">
+                        <div class="icon">🧠</div>
+                        <div class="name">YOLOv8n</div>
+                        <div class="sub">model/best.pt</div>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-node">
+                        <div class="icon">📐</div>
+                        <div class="name">OpenCV</div>
+                        <div class="sub">Bounding Boxes</div>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-node">
+                        <div class="icon">📊</div>
+                        <div class="name">Report Gen</div>
+                        <div class="sub">JSON + HTML</div>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-node">
+                        <div class="icon">📄</div>
+                        <div class="name">Output</div>
+                        <div class="sub">UI + PDF Report</div>
+                    </div>
+                </div>
+
+                <div
+                    style="margin-top:24px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; text-align:center;">
+                    <div>
+                        <div
+                            style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:var(--mono);letter-spacing:.1em;">
+                            STORAGE LAYERS</div>
+                        <div style="font-size:13px;">static/uploads &nbsp;·&nbsp; static/results<br>static/reports
+                            (JSON) &nbsp;·&nbsp; prediction_history.csv</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:var(--mono);letter-spacing:.1em;">
+                            SEVERITY LOGIC</div>
+                        <div style="font-size:13px;">
+                            <span style="color:#ef4444">■</span> Severe ≥ 0.85 &nbsp;
+                            <span style="color:#f59e0b">■</span> Medium 0.75–0.85 &nbsp;
+                            <span style="color:#22d3ee">■</span> Minor 0.70–0.75
+                        </div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:var(--mono);letter-spacing:.1em;">
+                            HEALTH SCORING</div>
+                        <div style="font-size:13px;">100 − (Severe×20) − (Medium×10) − (Minor×5)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PERFORMANCE ANALYSIS -->
+        <section class="section">
+            <div class="section-label">Performance</div>
+            <div class="section-title">Model & Prediction Analysis</div>
+
+            <div class="chart-row">
+                <div class="chart-box">
+                    <h3>Confidence Distribution (All Predictions)</h3>
+                    <canvas id="confChart" height="220"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Prediction Outcome Breakdown</h3>
+                    <canvas id="outcomeChart" height="220"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-row">
+                <div class="chart-box">
+                    <h3>Confidence Range Buckets</h3>
+                    <div style="margin-top:8px;">
+                        <div class="bar-group">
+                            <div class="bar-label"><span>54–70% (Low confidence)</span><span>4 predictions</span></div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:2.2%;background:#ef4444"></div>
+                            </div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar-label"><span>70–80% (Moderate)</span><span>28 predictions</span></div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:15.7%;background:#f59e0b"></div>
+                            </div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar-label"><span>80–90% (High confidence)</span><span>112 predictions</span>
+                            </div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:62.9%;background:#3b82f6"></div>
+                            </div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar-label"><span>90–100% (Very high)</span><span>34 predictions</span></div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:19.1%;background:#22c55e"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size:12px;color:var(--muted);margin-top:16px;">82% of all predictions fall in the
+                        80–100% confidence range, indicating a well-calibrated model for clear pothole imagery.</p>
+                </div>
+                <div class="chart-box">
+                    <h3>Duplicate Image Detections</h3>
+                    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Several images were tested multiple
+                        times — a sign of active user testing. Top repeated images:</p>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Runs</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-family:var(--mono);font-size:11px">42_jpg.rf...e5b0.jpg</td>
+                                <td>25</td>
+                                <td>85.32%</td>
+                            </tr>
+                            <tr>
+                                <td style="font-family:var(--mono);font-size:11px">01_jpg.rf...7a2d.jpg</td>
+                                <td>18</td>
+                                <td>89.99%</td>
+                            </tr>
+                            <tr>
+                                <td style="font-family:var(--mono);font-size:11px">65_jpg.rf...6928.jpg</td>
+                                <td>5</td>
+                                <td>86.77%</td>
+                            </tr>
+                            <tr>
+                                <td style="font-family:var(--mono);font-size:11px">22_jpg.rf...323d.jpg</td>
+                                <td>5</td>
+                                <td>88.71%</td>
+                            </tr>
+                            <tr>
+                                <td style="font-family:var(--mono);font-size:11px">16_jpg.rf...f62.jpg</td>
+                                <td>7</td>
+                                <td>84.75%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TECHNOLOGY STACK -->
+        <section class="section">
+            <div class="section-label">Technology</div>
+            <div class="section-title">Stack Assessment</div>
+
+            <table class="data-table"
+                style="background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid var(--border);">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Technology</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Detection Model</td>
+                        <td><span style="font-family:var(--mono);font-size:12px">YOLOv8n (Ultralytics)</span></td>
+                        <td>Object detection</td>
+                        <td><span class="badge badge-ok">Active</span></td>
+                        <td>best.pt trained on custom dataset; yolov8n.pt pretrained base</td>
+                    </tr>
+                    <tr>
+                        <td>Fallback Model</td>
+                        <td><span style="font-family:var(--mono);font-size:12px">MobileNetV2 (TensorFlow)</span></td>
+                        <td>Binary classification</td>
+                        <td><span class="badge badge-warn">Legacy</span></td>
+                        <td>train_model.py still in repo; not used by app.py</td>
+                    </tr>
+                    <tr>
+                        <td>Web Framework</td>
+                        <td><span style="font-family:var(--mono);font-size:12px">Flask</span></td>
+                        <td>HTTP + routing</td>
+                        <td><span class="badge badge-ok">Active</span></td>
+                        <td>Single-file app, debug=True in production</td>
+                    </tr>
+                    <tr>
+                        <td>Image Processing</td>
+                        <td><span style="font-family:var(--mono);font-size:12px">OpenCV (cv2)</span></td>
+                        <td>Bounding box drawing</td>
+                        <td><span class="badge badge-ok">Active</span></td>
+                        <td>Used for annotation overlay</td>
+                    </tr>
+                    <tr>
+                        <td>Frontend</td>
+                        <td><span style="font-family:var(--mono);font-size:12px">HTML + CSS + Chart.js</span></td>
+                        <td>UI + visualization</td>
+                        <td><span class="badge badge-ok">Active</span></td>
+                        <td>Dark-mode toggle, responsive layout</td>
+                    </tr>
+                    <tr>
+                        <td>Data Storage</td>
+                        <td><span style="font-family:var(--mono);font-size:12px">CSV + JSON files</span></td>
+                        <td>Prediction history + reports</td>
+                        <td><span class="badge badge-warn">Basic</span></td>
+                        <td>No database; grows unbounded</td>
+                    </tr>
+                    <tr>
+                        <td>Report Engine</td>
+                        <td><span style="font-family:var(--mono);font-size:12px">Jinja2 (via Flask)</span></td>
+                        <td>HTML report rendering</td>
+                        <td><span class="badge badge-ok">Active</span></td>
+                        <td>report.html template + JSON data</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- CODE QUALITY -->
+        <section class="section">
+            <div class="section-label">Code Quality</div>
+            <div class="section-title">Issues & Observations</div>
+
+            <div class="issue-list">
+                <div class="issue-item crit">
+                    <div class="issue-icon">🔴</div>
+                    <div>
+                        <div class="issue-title">debug=True in Production</div>
+                        <div class="issue-desc"><code
+                                style="font-family:var(--mono);font-size:12px;color:var(--accent2)">app.run(debug=True)</code>
+                            exposes the Werkzeug debugger with an interactive console. Anyone who triggers an error can
+                            execute arbitrary Python. Must be set to <code
+                                style="font-family:var(--mono);font-size:12px">debug=False</code> and deployed behind a
+                            WSGI server (Gunicorn/uWSGI).</div>
+                    </div>
+                </div>
+                <div class="issue-item crit">
+                    <div class="issue-icon">🔴</div>
+                    <div>
+                        <div class="issue-title">No File Validation on Upload</div>
+                        <div class="issue-desc">app.py saves any uploaded file directly without checking MIME type,
+                            extension, or file size. An attacker could upload a Python script or 4 GB file. Add <code
+                                style="font-family:var(--mono);font-size:12px">werkzeug.utils.secure_filename</code>,
+                            extension whitelist, and <code
+                                style="font-family:var(--mono);font-size:12px">MAX_CONTENT_LENGTH</code>.</div>
+                    </div>
+                </div>
+                <div class="issue-item crit">
+                    <div class="issue-icon">🔴</div>
+                    <div>
+                        <div class="issue-title">No File Deduplication — CSV Grows Without Bound</div>
+                        <div class="issue-desc">The same image (e.g., <em>42_jpg...e5b0.jpg</em>) has been logged 25
+                            times. There is no deduplication, session tracking, or size cap on prediction_history.csv.
+                            This inflates statistics and will slow the app as the file grows. The CSV currently has 178
+                            rows from only 47 unique images.</div>
+                    </div>
+                </div>
+                <div class="issue-item warn">
+                    <div class="issue-icon">🟡</div>
+                    <div>
+                        <div class="issue-title">Live Camera Route Blocks the Server Thread</div>
+                        <div class="issue-desc">The <code
+                                style="font-family:var(--mono);font-size:12px">/live_detection</code> route runs a
+                            blocking OpenCV loop in the main Flask thread. This hangs the entire server while active.
+                            Should be refactored to use MJPEG streaming (<code
+                                style="font-family:var(--mono);font-size:12px">Response(generate(), mimetype='multipart/x-mixed-replace')</code>).
+                        </div>
+                    </div>
+                </div>
+                <div class="issue-item warn">
+                    <div class="issue-icon">🟡</div>
+                    <div>
+                        <div class="issue-title">Bare except Clauses Hide Errors</div>
+                        <div class="issue-desc">Multiple <code
+                                style="font-family:var(--mono);font-size:12px">except: pass</code> blocks silently
+                            swallow exceptions (e.g., model accuracy file read, CSV read). This makes debugging failures
+                            impossible. Replace with specific exceptions and logging.</div>
+                    </div>
+                </div>
+                <div class="issue-item warn">
+                    <div class="issue-icon">🟡</div>
+                    <div>
+                        <div class="issue-title">requirements.txt Mismatch</div>
+                        <div class="issue-desc">requirements.txt lists <code
+                                style="font-family:var(--mono);font-size:12px">tensorflow, flask, opencv-python, numpy, pillow</code>
+                            — but the active app uses <code
+                                style="font-family:var(--mono);font-size:12px">ultralytics</code> (YOLOv8), which is
+                            missing. The legacy <code style="font-family:var(--mono);font-size:12px">tensorflow</code>
+                            dependency is listed but unused in app.py.</div>
+                    </div>
+                </div>
+                <div class="issue-item info">
+                    <div class="issue-icon">🔵</div>
+                    <div>
+                        <div class="issue-title">Two Separate Training Scripts</div>
+                        <div class="issue-desc">Both <code
+                                style="font-family:var(--mono);font-size:12px">train_model.py</code>
+                            (MobileNetV2/TensorFlow) and <code
+                                style="font-family:var(--mono);font-size:12px">train_yolo.py</code> (YOLOv8) exist. The
+                            app only uses the YOLO model. The TF script and its README references should be cleaned up
+                            to avoid confusion.</div>
+                    </div>
+                </div>
+                <div class="issue-item info">
+                    <div class="issue-icon">🔵</div>
+                    <div>
+                        <div class="issue-title">Road Health Score Is Unbounded Downward</div>
+                        <div class="issue-desc">The formula <code
+                                style="font-family:var(--mono);font-size:12px">100 − (severe×20) − (medium×10) − (minor×5)</code>
+                            can go negative for images with many potholes, but is then clamped to 0. The screenshot
+                            shows a "0% Poor" result which is correct but the UX could communicate the severity better
+                            (e.g., show actual raw score).</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE ANALYSIS -->
+        <section class="section">
+            <div class="section-label">Feature Assessment</div>
+            <div class="section-title">What Works Well</div>
+
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <h4>✅ Multi-Pothole Detection</h4>
+                    <p>YOLO correctly detects multiple potholes in a single image and counts them individually — a
+                        meaningful upgrade over binary MobileNetV2 classification.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>✅ Severity Classification</h4>
+                    <p>Three-tier severity system (Severe / Medium / Minor) based on confidence thresholds gives
+                        actionable insight beyond a simple yes/no detection.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>✅ Road Health Score</h4>
+                    <p>Weighted composite score (severe penalised 4× more than minor) provides a single intuitive number
+                        for road condition at a glance.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>✅ Report Generation</h4>
+                    <p>JSON-backed HTML reports with unique IDs, timestamps, detection images, and severity breakdowns
+                        are production-quality and printable.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>✅ Dark UI + Dark Mode Toggle</h4>
+                    <p>Clean glassmorphism design with a functional theme toggle. Professional appearance that works
+                        well for presentations and demos.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>✅ Prediction History Tracking</h4>
+                    <p>CSV-based history log allows review of past predictions within the same session, shown in reverse
+                        chronological order in the sidebar.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- RECOMMENDATIONS -->
+        <section class="section">
+            <div class="section-label">Roadmap</div>
+            <div class="section-title">Recommended Improvements</div>
+
+            <div class="chart-box wide" style="margin-bottom:24px;">
+                <h3>Priority Roadmap</h3>
+                <div style="margin-top:16px;">
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🔴 Security — File validation + debug mode</span><span>Critical ·
+                                Sprint 1</span></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:100%;background:#ef4444"></div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🔴 Security — Input sanitization</span><span>Critical · Sprint
+                                1</span></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:100%;background:#ef4444"></div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🟡 Reliability — Fix requirements.txt</span><span>High · Sprint
+                                1</span></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:80%;background:#f59e0b"></div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🟡 Architecture — SQLite for history +
+                                deduplication</span><span>High · Sprint 2</span></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:80%;background:#f59e0b"></div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🟡 Performance — Streaming live camera (MJPEG)</span><span>High ·
+                                Sprint 2</span></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:75%;background:#f59e0b"></div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🔵 Feature — GPS/map integration for pothole
+                                locations</span><span>Medium · Sprint 3</span></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:55%;background:#3b82f6"></div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🔵 Feature — True PDF export
+                                (WeasyPrint/ReportLab)</span><span>Medium · Sprint 3</span></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:50%;background:#3b82f6"></div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🟢 Enhancement — Analytics dashboard with charts</span><span>Low ·
+                                Sprint 4</span></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:35%;background:#22c55e"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <h4>🗄️ Replace CSV with SQLite</h4>
+                    <p>Use Python's built-in <code style="font-family:var(--mono);font-size:11px">sqlite3</code> to
+                        store predictions with timestamps, unique image hashes, and bounding box data. Enables proper
+                        querying, deduplication, and analytics without any extra dependencies.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>📍 GPS / Map Tagging</h4>
+                    <p>Allow users to attach GPS coordinates to uploaded images (via browser Geolocation API or EXIF
+                        extraction). Plot detections on a Leaflet.js map to create a real-time city pothole heatmap.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>📄 True PDF Generation</h4>
+                    <p>The current "PDF" is a browser print of the HTML report. Use WeasyPrint or ReportLab to generate
+                        real, downloadable PDFs server-side with embedded detection images.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>🎥 MJPEG Live Stream</h4>
+                    <p>Refactor <code style="font-family:var(--mono);font-size:11px">/live_detection</code> to yield
+                        frames as a multipart MJPEG stream from a generator, keeping the server responsive to other
+                        requests simultaneously.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>🔒 Input Security</h4>
+                    <p>Add <code style="font-family:var(--mono);font-size:11px">secure_filename()</code>, check allowed
+                        extensions (<code style="font-family:var(--mono);font-size:11px">.jpg .jpeg .png</code>), set
+                        <code
+                            style="font-family:var(--mono);font-size:11px">MAX_CONTENT_LENGTH = 10 * 1024 * 1024</code>,
+                        and validate MIME type with <code
+                            style="font-family:var(--mono);font-size:11px">python-magic</code>.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>🚀 Production Deployment</h4>
+                    <p>Deploy with <code
+                            style="font-family:var(--mono);font-size:11px">gunicorn app:app --workers 2</code> behind
+                        Nginx. Use environment variables for config. Containerise with Docker. Set <code
+                            style="font-family:var(--mono);font-size:11px">debug=False</code>.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUMMARY -->
+        <section class="section">
+            <div class="section-label">Verdict</div>
+            <div class="section-title">Overall Assessment</div>
+
+            <div class="chart-box">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;">
+                    <div>
+                        <canvas id="radarChart" height="260"></canvas>
+                    </div>
+                    <div>
+                        <p style="font-size:15px;line-height:1.7;color:var(--text);margin-bottom:16px;">
+                            This is a <strong>well-executed student/portfolio project</strong> that demonstrates real
+                            competency in computer vision, web development, and system integration. The switch from
+                            MobileNetV2 binary classification to YOLOv8 object detection was the right architectural
+                            decision — it unlocks multi-pothole counting, bounding-box localisation, and severity
+                            scoring that the earlier model couldn't provide.
+                        </p>
+                        <p style="font-size:14px;line-height:1.7;color:var(--muted);margin-bottom:16px;">
+                            The 94.07% model accuracy and consistent 80–90% detection confidence across 178 predictions
+                            show the model is production-viable for the right domain. The UI is professional, the report
+                            system is genuinely useful, and the feature set is coherent.
+                        </p>
+                        <p style="font-size:14px;line-height:1.7;color:var(--muted);">
+                            The main gaps are production readiness (security, deployment) and data management. These are
+                            straightforward to fix and don't require rethinking the architecture — just hardening what's
+                            already there.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p>Generated by Claude · <strong>Smart Road Damage Detection System</strong> · Project Analysis Report</p>
+        <p style="font-family:var(--mono);font-size:11px;color:var(--muted)">June 24, 2026 · YOLOv8 · Flask · OpenCV</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.borderColor = '#1a2640';
+
+        // Confidence distribution histogram
+        const confCtx = document.getElementById('confChart').getContext('2d');
+        new Chart(confCtx, {
+            type: 'bar',
+            data: {
+                labels: ['54–60%', '60–70%', '70–75%', '75–80%', '80–85%', '85–90%', '90–95%', '95–100%'],
+                datasets: [{
+                    label: 'Predictions',
+                    data: [2, 2, 14, 14, 82, 30, 2, 32],
+                    backgroundColor: [
+                        '#ef4444', '#ef4444',
+                        '#f59e0b', '#f59e0b',
+                        '#3b82f6', '#3b82f6',
+                        '#22c55e', '#22c55e'
+                    ],
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: '#1a2640' }, ticks: { color: '#64748b' } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // Outcome doughnut
+        const outcomeCtx = document.getElementById('outcomeChart').getContext('2d');
+        new Chart(outcomeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pothole Detected', 'Normal Road'],
+                datasets: [{
+                    data: [167, 11],
+                    backgroundColor: ['#ef4444', '#22c55e'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                cutout: '68%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 20, font: { size: 12 } } }
+                }
+            }
+        });
+
+        // Radar chart
+        const radarCtx = document.getElementById('radarChart').getContext('2d');
+        new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Model Accuracy', 'UI Quality', 'Code Structure', 'Security', 'Scalability', 'Feature Set'],
+                datasets: [{
+                    label: 'Current Score',
+                    data: [94, 82, 65, 30, 40, 78],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59,130,246,0.15)',
+                    pointBackgroundColor: '#3b82f6',
+                    borderWidth: 2,
+                }, {
+                    label: 'Target Score',
+                    data: [94, 85, 80, 80, 70, 85],
+                    borderColor: '#22d3ee',
+                    backgroundColor: 'rgba(34,211,238,0.07)',
+                    pointBackgroundColor: '#22d3ee',
+                    borderWidth: 2,
+                    borderDash: [4, 4],
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        min: 0, max: 100,
+                        ticks: { display: false },
+                        grid: { color: '#1a2640' },
+                        pointLabels: { color: '#94a3b8', font: { size: 11 } }
+                    }
+                },
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 16 } } }
+            }
+        });
+    </script>
+</body>
+
+</html>

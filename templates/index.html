@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Road Damage Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="theme-toggle" style="text-align: right; margin-bottom: 15px;">
+        <button onclick="toggleTheme()">🌙 Dark Mode</button>
+    </div>
+
+    <h1>🚧 Smart Road Damage Detection System</h1>
+
+ <form method="POST"
+      enctype="multipart/form-data"
+      onsubmit="showLoader()">
+
+    <div class="upload-card">
+
+        <h2>📤 Upload Road Image</h2>
+
+        <p>
+            Upload from gallery or capture directly from camera
+        </p>
+
+        <input
+            type="file"
+            id="imageInput"
+            name="image"
+            accept="image/*"
+            required
+            hidden>
+
+        <div class="upload-actions">
+
+            <button type="button"
+                    class="upload-btn"
+                    onclick="document.getElementById('imageInput').click();">
+                📁 Upload Image
+            </button>
+
+            <button type="button"
+                    class="camera-btn"
+                    onclick="openCamera();">
+                📷 Capture Image
+            </button>
+
+        </div>
+
+        <p id="selectedFile" style="color:white;"></p>
+
+        <button type="submit" class="detect-btn">
+            🔍 Detect Potholes
+        </button>
+
+    </div>
+
+</form>
+
+    <br>
+
+    <div id="loader" style="display:none;">
+        <div class="spinner"></div>
+        <p>Analyzing Road Image...</p>
+    </div>
+
+    {% if filename %}
+    <div class="filename">
+        📁 Uploaded File: <strong>{{ filename }}</strong>
+    </div>
+    {% endif %}
+
+    <div class="stats-card">
+        <h2>📊 Project Statistics</h2>
+        <br>
+        <div class="stats-row">
+
+    <div class="dashboard-card">
+        <div class="card-icon">📷</div>
+        <h3>{{ total_images_tested }}</h3>
+        <p>Total Images Tested</p>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-icon">🎯</div>
+        <h3>{{ model_accuracy }}</h3>
+        <p>Model Accuracy</p>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-icon">📈</div>
+        <h3>
+            {% if confidence %}
+                {{ confidence }}%
+            {% else %}
+                0%
+            {% endif %}
+        </h3>
+        <p>Prediction Confidence</p>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-icon">🚧</div>
+        <h3>{{ pothole_count }}</h3>
+        <p>Total Potholes Found</p>
+    </div>
+
+    <div class="dashboard-card">
+
+        <div class="health-circle">
+            <span>{{ road_health_score }}%</span>
+        </div>
+
+        <h3>
+        {% if road_health_score >= 80 %}
+            🟢 Excellent
+        {% elif road_health_score >= 50 %}
+            🟡 Fair
+        {% else %}
+            🔴 Poor
+        {% endif %}
+        </h3>
+
+        <p>Road Health Score</p>
+
+    </div>
+
+</div>
+    </div>
+
+    {% if image_path %}
+    <div class="dashboard-layout">
+        
+        <div class="left-panel">
+            <img src="{{ image_path }}" class="result-image" alt="Detection Result">
+
+            {% if prediction %}
+            <div class="result {% if prediction == 'Pothole Detected' %}pothole{% else %}normal{% endif %}">
+                <h2>{{ prediction }}</h2>
+                <h3>Confidence : {{ confidence }}%</h3>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="right-panel">
+<br>
+<br>
+<br>
+            <div class="history-card">
+                <h3>🕘 Recent Predictions</h3>
+                <br>
+                <div class="history-scroll">
+                    {% for row in history[::-1] %}
+                    <div class="history-item">
+                        <strong>{{ row[0] }}</strong><br>
+                        {{ row[1] }}<br>
+                        {{ row[2] }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+<br>
+<br>
+
+
+
+            <div class="pdf-download-section">
+        <a href="/{{ pdf_report }}" target="_blank">
+            <button class="pdf-btn">📄 View Full Report</button>
+        </a>
+    </div>
+
+
+        </div>
+    </div>
+
+    {% endif %}
+
+    {% if pdf_report %}
+    
+    {% endif %}
+
+    {% if pothole_count > 0 %}
+    <div class="stats-card">
+        <h2>🚨 Pothole Severity Analysis</h2>
+        <br>
+        <div class="stats-row">
+            <div class="dashboard-card severe-card">
+                <h3>🔴 {{ severe_count }}</h3>
+                <p>Severe Potholes</p>
+            </div>
+            <div class="dashboard-card medium-card">
+                <h3>🟠 {{ medium_count }}</h3>
+                <p>Medium Potholes</p>
+            </div>
+            <div class="dashboard-card minor-card">
+                <h3>🟡 {{ minor_count }}</h3>
+                <p>Minor Potholes</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <h2>📈 Detection Graph</h2>
+        <div class="graph-container">
+            <canvas id="severityChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<div class="about">
+    <h2>ℹ️ About Project</h2>
+    <p>This project uses YOLOv8 and OpenCV to detect road potholes.</p>
+    <p>Features:</p>
+    <ul>
+        <li>Multi-Pothole Detection</li>
+        <li>Pothole Counting</li>
+        <li>Severity Classification</li>
+        <li>Bounding Box Visualization</li>
+        <li>Confidence Scoring</li>
+        <li>Prediction History Tracking</li>
+    </ul>
+    <div class="footer">
+        Smart Road Damage Detection using YOLOv8, OpenCV & Flask
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<script>
+    // Interface & Feedback Functions
+    function showLoader() {
+        document.getElementById("loader").style.display = "block";
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle("dark-mode");
+    }
+
+    function openCamera() {
+        document.getElementById("cameraInput").click();
+    }
+
+    function validateFile() {
+        const uploadFile = document.getElementById("uploadInput").files.length;
+        const cameraFile = document.getElementById("cameraInput").files.length;
+
+        if (uploadFile === 0 && cameraFile === 0) {
+            alert("Please select or capture an image first.");
+            return false;
+        }
+
+        showLoader();
+        return true;
+    }
+
+    // Chart.js Context Engine Execution
+    {% if pothole_count > 0 %}
+    const ctx = document.getElementById("severityChart");
+    if (ctx) {
+        new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels: ["Severe", "Medium", "Minor"],
+                datasets: [{
+                    data: [{{ severe_count }}, {{ medium_count }}, {{ minor_count }}],
+                    backgroundColor: ["#ff4b4b", "#ff9800", "#ffd54f"]
+                }]
+            },
+            options: {
+    cutout: "70%",
+    responsive: true,
+    plugins: {
+        legend: {
+            position: "right"
+        }
+    }
+}
+        });
+    }
+    {% endif %}
+</script>
+
+<script>
+function openCamera() {
+    const input = document.getElementById("imageInput");
+
+    input.setAttribute("capture", "environment");
+    input.click();
+}
+
+document.getElementById("imageInput").addEventListener("change", function() {
+    if(this.files.length > 0) {
+        document.getElementById("selectedFile").innerText =
+            "Selected: " + this.files[0].name;
+    }
+});
+</script>
+
+</body>
+</html>
